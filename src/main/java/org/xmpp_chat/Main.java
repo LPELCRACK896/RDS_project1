@@ -1,3 +1,5 @@
+package org.xmpp_chat;
+import org.xmpp_chat.CLI;
 import java.io.IOException;
 
 public class Main {
