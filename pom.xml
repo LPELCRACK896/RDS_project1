@@ -38,6 +38,11 @@
     </dependency>
     <dependency>
       <groupId>org.igniterealtime.smack</groupId>
+      <artifactId>smack-experimental</artifactId>
+      <version>4.4.6</version>
+    </dependency>
+    <dependency>
+      <groupId>org.igniterealtime.smack</groupId>
       <artifactId>smack-java8</artifactId>
       <version>4.4.6</version>
     </dependency>
