@@ -1,35 +1,53 @@
 package xmpp.client;
 
-import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration;
-import org.jivesoftware.smackx.disco.packet.DiscoverInfo;
-import org.jivesoftware.smackx.disco.packet.DiscoverInfo.Feature;
-import org.jivesoftware.smackx.disco.ServiceDiscoveryManager;
-import org.jivesoftware.smackx.iqregister.AccountManager;
-import org.jivesoftware.smack.ConnectionConfiguration;
 import org.jivesoftware.smack.AbstractXMPPConnection;
-import org.jivesoftware.smack.tcp.XMPPTCPConnection;
-import org.jxmpp.jid.Jid;
-import org.jxmpp.stringprep.XmppStringprepException;
-import org.jivesoftware.smack.roster.RosterGroup;
-import org.jivesoftware.smack.chat2.ChatManager;
-import org.jivesoftware.smack.packet.Presence;
-
+import  org.jxmpp.jid.EntityFullJid;
+import org.jivesoftware.smack.ConnectionConfiguration;
 import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.XMPPException;
+import org.jivesoftware.smack.packet.Presence;
+import org.jivesoftware.smack.roster.RosterGroup;
+import org.jivesoftware.smack.tcp.XMPPTCPConnection;
 import org.jivesoftware.smack.chat2.Chat;
+import org.jivesoftware.smack.chat2.ChatManager;
+import org.jivesoftware.smack.roster.Roster;
+import org.jivesoftware.smack.roster.RosterEntry;
+import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration;
+import org.jivesoftware.smackx.disco.ServiceDiscoveryManager;
+import org.jivesoftware.smackx.disco.packet.DiscoverInfo;
+import org.jivesoftware.smackx.disco.packet.DiscoverInfo.Feature;
+import org.jivesoftware.smackx.iqregister.AccountManager;
+import org.jxmpp.jid.DomainBareJid;
+import org.jxmpp.jid.EntityBareJid;
+import org.jxmpp.jid.BareJid;
+import org.jxmpp.jid.Jid;
+import org.jxmpp.jid.impl.JidCreate;
 import org.jxmpp.jid.parts.Localpart;
+import org.jxmpp.jid.parts.Resourcepart;
+import org.jxmpp.stringprep.XmppStringprepException;
+import org.jivesoftware.smackx.muc.MultiUserChat;
+import org.jivesoftware.smackx.muc.MucEnterConfiguration;
+import org.jivesoftware.smackx.muc.MultiUserChatManager;
+import org.jivesoftware.smackx.muc.HostedRoom;
+import org.minidns.record.A;
+
 import java.io.IOException;
+import java.nio.file.Files;
+import java.io.File;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.Base64;
+import java.util.logging.Logger;
+import javax.swing.JFileChooser;
 
-import org.jxmpp.jid.BareJid;
-import org.jxmpp.jid.impl.JidCreate;
 
-import org.jivesoftware.smack.roster.Roster;
-import org.jivesoftware.smack.roster.RosterEntry;
+import org.jivesoftware.smackx.filetransfer.FileTransferManager;
+import org.jivesoftware.smackx.filetransfer.OutgoingFileTransfer;
+import org.jivesoftware.smackx.filetransfer.FileTransfer.Status;
+
 public class Client {
     private String username;
     private String password;
@@ -43,6 +61,8 @@ public class Client {
 
 
     private ChatManager chatManager;
+    private static final Logger LOGGER = Logger.getLogger(ChatManager.class.getName());
+
 
     public Client(String username, String password, boolean isNew, String domain, String ip, boolean globalShowLogs) {
         this.globalShowLogs = globalShowLogs;
@@ -76,6 +96,7 @@ public class Client {
                     .setHost(ip)
                     .setPort(5222)
                     .setSecurityMode(ConnectionConfiguration.SecurityMode.disabled)
+                    //.enableDefaultDebugger()
                     .build();
             System.out.println("Termina creacion de conexion");
             return new XMPPTCPConnection(config);
@@ -306,12 +327,11 @@ public class Client {
     }
 
     public void initMessageListener() {
-        if (chatManager == null) {
-            ChatManager.getInstanceFor(connection);
-        }
         chatManager.addIncomingListener((from, message, chat) -> {
+            System.out.println("holla");
             System.out.println("Received message from " + from + ": " + message.getBody());
         });
+        System.out.println("aa");
     }
 
     public List<Feature> getSupportedFeatures() {
@@ -341,6 +361,120 @@ public class Client {
     public void setPassword(String password) {
         this.password = password;
     }
+
+    public void joinGroup(String roomJID, String nickname, String password) {
+        try {
+            MultiUserChatManager mucManager = MultiUserChatManager.getInstanceFor(connection);
+            EntityBareJid roomBareJid = JidCreate.entityBareFrom(roomJID);
+            MultiUserChat muc = mucManager.getMultiUserChat(roomBareJid);
+
+            if (password != null && !password.trim().isEmpty()) {
+                muc.join(Resourcepart.from(nickname), password);
+            } else {
+                muc.join(Resourcepart.from(nickname));
+            }
+
+            System.out.println("Joined group " + roomJID + " as " + nickname);
+        } catch (Exception e) {
+            System.err.println("Error joining group: " + e.getMessage());
+        }
+    }
+
+    public void sendMessageToGroup(String roomName, String messageContent) {
+        if (connection == null || !connection.isConnected()) {
+            System.err.println("Debes estar conectado para enviar un mensaje a un grupo.");
+            return;
+        }
+        try {
+            MultiUserChatManager mucManager = MultiUserChatManager.getInstanceFor(connection);
+            MultiUserChat muc = mucManager.getMultiUserChat(JidCreate.entityBareFrom(roomName));
+            muc.sendMessage(messageContent);
+        } catch (Exception e) {
+            System.err.println("Error al enviar mensaje al grupo: " + e.getMessage());
+        }
+    }
+
+    public List<List<String>> listAvailableGroups() {
+        List<List<String>> roomList = new ArrayList<>();
+
+        try {
+            MultiUserChatManager mucManager = MultiUserChatManager.getInstanceFor(connection);
+
+            // Obtiene los dominios que ofrecen el servicio de chat multiusuario
+            List<DomainBareJid> mucServiceDomains = mucManager.getMucServiceDomains();
+
+            for (DomainBareJid domain : mucServiceDomains) {
+                // Obtiene las salas alojadas en el dominio específico
+                Map<EntityBareJid, HostedRoom> rooms = mucManager.getRoomsHostedBy(domain);
+
+                for (Map.Entry<EntityBareJid,HostedRoom> entry : rooms.entrySet()) {
+                    HostedRoom hostedRoom = entry.getValue();
+                    List<String> room = new ArrayList<String>();
+                    room.add(hostedRoom.getJid().toString());
+                    room.add(hostedRoom.getName());
+                    roomList.add(room);
+                }
+            }
+
+        } catch (Exception e) {
+            System.err.println("Error listing available groups: " + e.getMessage());
+        }
+
+        return roomList;
+    }
+    public void sendFileBase64(String toJID) {
+        JFileChooser fileChooser = new JFileChooser();
+        int returnValue = fileChooser.showOpenDialog(null);
+        if (returnValue == JFileChooser.APPROVE_OPTION) {
+            try {
+                byte[] fileContent = Files.readAllBytes(fileChooser.getSelectedFile().toPath());
+                String encodedString = Base64.getEncoder().encodeToString(fileContent);
+                String fileMessage = "file://" + encodedString;
+                sendMessage(toJID, fileMessage);
+            } catch (Exception e) {
+                System.err.println("Error al codificar y enviar el archivo: " + e.getMessage());
+            }
+        }
+    }
+    public void sendFile(String toJID) {
+        if (connection == null || !connection.isConnected()) {
+            System.err.println("Debes estar conectado para enviar un archivo.");
+            return;
+        }
+
+        JFileChooser fileChooser = new JFileChooser();
+        int returnValue = fileChooser.showOpenDialog(null);
+        if (returnValue != JFileChooser.APPROVE_OPTION) {
+            return; // el usuario canceló la selección de archivo
+        }
+
+        FileTransferManager ftManager = FileTransferManager.getInstanceFor(connection);
+        try {
+            EntityFullJid receiverJID = JidCreate.entityFullFrom(toJID);
+            OutgoingFileTransfer transfer = ftManager.createOutgoingFileTransfer(receiverJID);
+
+            File file = fileChooser.getSelectedFile();
+            transfer.sendFile(file, "Sending a file");
+
+            // Espera a que el archivo se envíe o hasta que ocurra un error
+            while (!transfer.isDone()) {
+                if (transfer.getStatus() == Status.error) {
+                    System.err.println("ERROR: " + transfer.getError());
+                } else if (transfer.getStatus() == Status.cancelled || transfer.getStatus() == Status.refused) {
+                    System.err.println("CANCELLED: " + transfer.getError());
+                }
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            System.out.println("File sent successfully.");
+        } catch (Exception e) {
+            System.err.println("Error al enviar archivo: " + e.getMessage());
+        }
+    }
+
 
 
 }
