@@ -19,29 +19,39 @@ public class Client {
     private boolean isNew;
     private AbstractXMPPConnection connection;
     private String domain;
+    private String ip;
 
-    public Client(String username, String password, boolean isNew, String domain) {
+    private boolean isLoggedIn;
+
+    public Client(String username, String password, boolean isNew, String domain, String ip) {
         this.username = username;
         this.password = password;
         this.isNew = isNew;
         this.domain = domain;
-        this.connection = createConnection(domain);
+        this.connection = createConnection(domain, ip);
+        this.ip = ip;
+        this.isLoggedIn = false;
 
         if (connection != null) {
             if (isNew) {
-                registerAccount();
-            } else {
-                login();
+                registerAccount(true, true);
+            }else {
+                login(true);
             }
+
         }
     }
 
-    private AbstractXMPPConnection createConnection(String domain) {
+    private AbstractXMPPConnection createConnection(String domain, String ip) {
+        System.out.println("Comienza a crear conexion");
         try {
             XMPPTCPConnectionConfiguration config = XMPPTCPConnectionConfiguration.builder()
                     .setXmppDomain(domain)
+                    .setHost(ip)
+                    .setPort(5222)
                     .setSecurityMode(ConnectionConfiguration.SecurityMode.disabled)
                     .build();
+            System.out.println("Termina creacion de conexion");
             return new XMPPTCPConnection(config);
         } catch (XmppStringprepException e) {
             System.err.println("Error creating XMPP connection: " + e.getMessage());
@@ -49,25 +59,34 @@ public class Client {
         }
     }
 
-    private void registerAccount() {
+    private void registerAccount(boolean showLogs, boolean onSuccessLogin) {
         try {
             AccountManager accountManager = AccountManager.getInstance(connection);
-            connection.connect();
-            accountManager.sensitiveOperationOverInsecureConnection(true);  // this should only be done for testing on servers without SSL
+            if (!connection.isConnected()) {
+                connection.connect();
+            }
+            accountManager.sensitiveOperationOverInsecureConnection(true);
             accountManager.createAccount(Localpart.from(username), password);
-            System.out.println("Account registered successfully!");
+            if (showLogs) System.out.println("Account registered successfully!");
+            if (onSuccessLogin) login(false);
+
         } catch (XMPPException | SmackException | InterruptedException | IOException e) {
-            System.err.println("Error registering account: " + e.getMessage());
+            if (showLogs) System.err.println("Error registering account: " + e.getMessage());
         }
     }
 
-    private void login() {
+
+    public void login(boolean showLogs) {
         try {
-            connection.connect();
+            if (!connection.isConnected()) {
+                connection.connect();
+            }
             connection.login(username, password);
-            System.out.println("Logged in successfully!");
+            this.isLoggedIn = true;
+
+            if (showLogs) System.out.println("Logged in successfully!");
         } catch (XMPPException | SmackException | InterruptedException | IOException e) {
-            System.err.println("Error logging in: " + e.getMessage());
+            if (showLogs) System.err.println("Error logging in: " + e.getMessage());
         }
     }
 
@@ -91,4 +110,41 @@ public class Client {
             System.out.println("-------------");
         }
     }
+    public void logout() {
+        if (connection != null && connection.isConnected()) {
+            connection.disconnect();
+            System.out.println("Logged out successfully!");
+            this.isLoggedIn = false;
+        }
+    }
+    public void deleteAccount() {
+        if (connection == null || !connection.isConnected()) {
+            System.err.println("You must be connected to delete your account!");
+            return;
+        }
+
+        try {
+            AccountManager accountManager = AccountManager.getInstance(connection);
+            accountManager.deleteAccount();
+            System.out.println("Account deleted successfully!");
+        } catch (XMPPException | SmackException |InterruptedException e) {
+            System.err.println("Error deleting account: " + e.getMessage());
+        }
+    }
+
+
+    public void setCredentials(String username, String password){
+        setUsername(username);
+        setPassword(password);
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+
 }
