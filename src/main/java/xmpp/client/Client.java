@@ -1,15 +1,13 @@
 package xmpp.client;
 
-import  org.jivesoftware.smackx.carbons.*;
 import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration;
+import org.jivesoftware.smackx.disco.packet.DiscoverInfo;
 import org.jivesoftware.smackx.disco.packet.DiscoverInfo.Feature;
 import org.jivesoftware.smackx.disco.ServiceDiscoveryManager;
 import org.jivesoftware.smackx.iqregister.AccountManager;
-import org.jivesoftware.smackx.disco.packet.DiscoverInfo;
 import org.jivesoftware.smack.ConnectionConfiguration;
 import org.jivesoftware.smack.AbstractXMPPConnection;
 import org.jivesoftware.smack.tcp.XMPPTCPConnection;
-import org.jivesoftware.smackx.carbons.CarbonManager;
 import org.jxmpp.jid.Jid;
 import org.jxmpp.stringprep.XmppStringprepException;
 import org.jivesoftware.smack.roster.RosterGroup;
@@ -26,8 +24,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import org.jivesoftware.smackx.carbons.CarbonManager;
 
 import org.jxmpp.jid.BareJid;
 import org.jxmpp.jid.impl.JidCreate;
@@ -66,6 +62,7 @@ public class Client {
                 login(true);
             }
             this.chatManager = ChatManager.getInstanceFor(connection);
+            initMessageListener();
 
 
         }
@@ -296,8 +293,8 @@ public class Client {
         //chatHistory.put(contactJid, messages);
     //}
 
-    public void sendMessage(String toJID, String messageContent)  {
-        if (chatManager == null){
+    public void sendMessage(String toJID, String messageContent) {
+        if (chatManager == null) {
             ChatManager.getInstanceFor(connection);
         }
         try {
@@ -307,43 +304,9 @@ public class Client {
             System.err.println("Error sending message: " + e.getMessage());
         }
     }
-    public void enableCarbons() {
-        if (connection == null || !connection.isConnected() || !isLoggedIn) {
-            System.err.println("Debe estar conectado y autenticado para habilitar Carbons.");
-            return;
-        }
 
-        try {
-            CarbonManager carbonManager = CarbonManager.getInstanceFor(connection);
-            if (!carbonManager.isSupportedByServer()) {
-                System.out.println("El servidor no admite Carbons.");
-                return;
-            }
-
-            carbonManager.enableCarbons();
-            System.out.println("Carbons habilitado.");
-        } catch (XMPPException | SmackException | InterruptedException e) {
-            System.err.println("Error al habilitar Carbons: " + e.getMessage());
-        }
-    }
-
-    public void addCarbonListener() {
-        org.jivesoftware.smackx.carbons.CarbonManager carbonManager = org.jivesoftware.smackx.carbons.CarbonManager.getInstanceFor(connection);
-
-        carbonManager.addCarbonCopyReceivedListener(new onCarbonCopyReceived() {
-            @Override
-            public void onCarbonCopyReceived(Direction direction, Message carbonCopy, Message wrappingMessage) {
-                // Aquí manejas el evento de recepción de una copia de carbono.
-
-                // Por ejemplo, puedes imprimir el contenido del mensaje:
-                System.out.println("Dirección: " + direction);
-                System.out.println("Copia de Carbono: " + carbonCopy.getBody());
-                System.out.println("Mensaje envolvente: " + wrappingMessage.getBody());
-            }
-        });
-    }
     public void initMessageListener() {
-        if (chatManager == null){
+        if (chatManager == null) {
             ChatManager.getInstanceFor(connection);
         }
         chatManager.addIncomingListener((from, message, chat) -> {
