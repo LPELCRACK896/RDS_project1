@@ -25,7 +25,6 @@ public class Client {
     private AbstractXMPPConnection connection;
     private String domain;
     private String ip;
-
     private boolean globalShowLogs;
     private boolean isLoggedIn;
 
@@ -82,7 +81,6 @@ public class Client {
         }
     }
 
-
     public void login(boolean showLogs) {
         try {
             if (!connection.isConnected()) {
@@ -130,6 +128,7 @@ public class Client {
             this.isLoggedIn = false;
         }
     }
+
     public void deleteAccount() {
         if (connection == null || !connection.isConnected()) {
             System.err.println("You must be connected to delete your account!");
@@ -147,7 +146,6 @@ public class Client {
 
     public void addContact(String userJID, String nickname, String[] groups) {
         Roster roster = Roster.getInstanceFor(connection);
-
         if (!roster.isLoaded()) {
             try {
                 roster.reloadAndWait();
@@ -208,6 +206,65 @@ public class Client {
         }
         if (globalShowLogs) System.out.println(detailsBuilder);
         return detailsBuilder.toString();
+    }
+
+    public void removeContact(String userJID) {
+        Roster roster = Roster.getInstanceFor(connection);
+
+        if (!roster.isLoaded()) {
+            try {
+                roster.reloadAndWait();
+            } catch (Exception e) {
+                System.err.println("Error reloading roster: " + e.getMessage());
+                return;
+            }
+        }
+
+        try {
+            BareJid jid = JidCreate.bareFrom(userJID);
+            RosterEntry entry = roster.getEntry(jid);
+
+            if (entry != null) {
+                roster.removeEntry(entry);
+                System.out.println("Contact removed successfully!");
+            } else {
+                System.out.println("No contact found with the provided JID: " + userJID);
+            }
+        } catch (Exception e) {
+            System.err.println("Error removing contact: " + e.getMessage());
+        }
+    }
+
+    public void removeContactAndUnsubscribe(String userJID) {
+        Roster roster = Roster.getInstanceFor(connection);
+
+        if (!roster.isLoaded()) {
+            try {
+                roster.reloadAndWait();
+            } catch (Exception e) {
+                System.err.println("Error reloading roster: " + e.getMessage());
+                return;
+            }
+        }
+
+        try {
+            BareJid jid = JidCreate.bareFrom(userJID);
+            RosterEntry entry = roster.getEntry(jid);
+
+            if (entry != null) {
+                Presence unsubscribe = new Presence(Presence.Type.unsubscribe);
+                unsubscribe.setTo(jid);
+                connection.sendStanza(unsubscribe);
+
+                roster.removeEntry(entry);
+
+                System.out.println("Contact removed and unsubscribed successfully!");
+            } else {
+                System.out.println("No contact found with the provided JID: " + userJID);
+            }
+        } catch (Exception e) {
+            System.err.println("Error removing contact and unsubscribing: " + e.getMessage());
+        }
     }
 
     public void setCredentials(String username, String password){
