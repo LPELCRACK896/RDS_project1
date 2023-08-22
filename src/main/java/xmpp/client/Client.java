@@ -4,12 +4,17 @@ import org.jivesoftware.smack.AbstractXMPPConnection;
 import org.jivesoftware.smack.ConnectionConfiguration;
 import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.XMPPException;
+import org.jivesoftware.smack.packet.Presence;
+import org.jivesoftware.smack.roster.RosterGroup;
 import org.jivesoftware.smack.tcp.XMPPTCPConnection;
 import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration;
 import org.jivesoftware.smackx.iqregister.AccountManager;
 import org.jxmpp.stringprep.XmppStringprepException;
 import org.jxmpp.jid.parts.Localpart;
 import java.io.IOException;
+
+import org.jxmpp.jid.BareJid;
+import org.jxmpp.jid.impl.JidCreate;
 
 import org.jivesoftware.smack.roster.Roster;
 import org.jivesoftware.smack.roster.RosterEntry;
@@ -21,9 +26,11 @@ public class Client {
     private String domain;
     private String ip;
 
+    private boolean globalShowLogs;
     private boolean isLoggedIn;
 
-    public Client(String username, String password, boolean isNew, String domain, String ip) {
+    public Client(String username, String password, boolean isNew, String domain, String ip, boolean globalShowLogs) {
+        this.globalShowLogs = globalShowLogs;
         this.username = username;
         this.password = password;
         this.isNew = isNew;
@@ -90,26 +97,32 @@ public class Client {
         }
     }
 
-    public void printRosterEntries() {
+    public String printRosterEntries() {
         Roster roster = Roster.getInstanceFor(connection);
+        StringBuilder strRoaster = new StringBuilder();
 
         // Ensure the roster is loaded before accessing it
         try {
             roster.reloadAndWait();
         } catch (Exception e) {
             System.err.println("Error loading roster: " + e.getMessage());
-            return;
+            return "";
         }
 
         // Print all entries in the roster
+        strRoaster.append("=====Roaster=====\n");
         for (RosterEntry entry : roster.getEntries()) {
-            System.out.println("User JID: " + entry.getJid());
-            System.out.println("Name: " + entry.getName());
-            System.out.println("Type: " + entry.getType());
-            //System.out.println("Status: " + entry.getStatus());
-            System.out.println("-------------");
+            strRoaster.append("User JID: ").append(entry.getJid()).append("\n");
+            Presence presence = roster.getPresence(entry.getJid());
+            if (presence != null) {
+                strRoaster.append("Estado: ").append(presence.getType()).append("\n").append("Modo: ").append(presence.getMode()).append("\n");
+            }
+            strRoaster.append("Subcripción confirmada: ").append(!entry.isSubscriptionPending()).append("\n").append("\n-------------\n");
         }
+        if (globalShowLogs) System.out.println(strRoaster);
+        return strRoaster.toString();
     }
+
     public void logout() {
         if (connection != null && connection.isConnected()) {
             connection.disconnect();
@@ -132,6 +145,70 @@ public class Client {
         }
     }
 
+    public void addContact(String userJID, String nickname, String[] groups) {
+        Roster roster = Roster.getInstanceFor(connection);
+
+        if (!roster.isLoaded()) {
+            try {
+                roster.reloadAndWait();
+            } catch (Exception e) {
+                System.err.println("Error reloading roster: " + e.getMessage());
+                return;
+            }
+        }
+        try {
+            BareJid jid = JidCreate.bareFrom(userJID);
+            roster.createItemAndRequestSubscription(jid, nickname, groups);
+            System.out.println("Contact added and subscription requested successfully!");
+        } catch (Exception e) {
+            System.err.println("Error adding contact: " + e.getMessage());
+        }
+    }
+
+    public String showContactDetails(String userJID) {
+        Roster roster = Roster.getInstanceFor(connection);
+        StringBuilder detailsBuilder = new StringBuilder();
+
+        if (!roster.isLoaded()) {
+            try {
+                roster.reloadAndWait();
+            } catch (Exception e) {
+                detailsBuilder.append("Error reloading roster: ").append(e.getMessage()).append("\n");
+                return detailsBuilder.toString();
+            }
+        }
+
+        try {
+            BareJid jid = JidCreate.bareFrom(userJID);
+            RosterEntry entry = roster.getEntry(jid);
+
+            if (entry != null) {
+                detailsBuilder.append("Details for contact: ").append(userJID).append("\n");
+                detailsBuilder.append("User JID: ").append(entry.getJid()).append("\n");
+                detailsBuilder.append("Name: ").append(entry.getName()).append("\n");
+                detailsBuilder.append("Type: ").append(entry.getType()).append("\n");
+
+                Presence presence = roster.getPresence(entry.getJid());
+                if (presence != null) {
+                    detailsBuilder.append("Estado: ").append(presence.getType()).append("\n");
+                    detailsBuilder.append("Modo: ").append(presence.getMode()).append("\n");
+                }
+
+                detailsBuilder.append("Subscription Status: ").append(entry.getType()).append("\n");
+                detailsBuilder.append("Groups: \n");
+                for (RosterGroup group : entry.getGroups()) {
+                    detailsBuilder.append("- ").append(group.getName()).append("\n");
+                }
+
+            } else {
+                detailsBuilder.append("No details found for user: ").append(userJID).append("\n");
+            }
+        } catch (Exception e) {
+            detailsBuilder.append("Error fetching contact details: ").append(e.getMessage()).append("\n");
+        }
+        if (globalShowLogs) System.out.println(detailsBuilder);
+        return detailsBuilder.toString();
+    }
 
     public void setCredentials(String username, String password){
         setUsername(username);
