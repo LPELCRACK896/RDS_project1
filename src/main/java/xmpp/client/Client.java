@@ -65,6 +65,16 @@ public class Client {
     private Map<BareJid, List<String>> chatHistory = new HashMap<>();
     private ChatManager chatManager;
     private static final Logger LOGGER = Logger.getLogger(ChatManager.class.getName());
+
+    /**
+     *
+     * @param username JID must include username and domain
+     * @param password JID password, in case of login expects the
+     * @param isNew Boolean indicates if user is new, so itll register or already exists, so it will only login.
+     * @param domain Server domain
+     * @param ip Server IP
+     * @param globalShowLogs Boolean indicates if it displays some logs related with some actions related to connection.
+     */
     public Client(String username, String password, boolean isNew, String domain, String ip, boolean globalShowLogs) {
         this.globalShowLogs = globalShowLogs;
         this.username = username;
@@ -84,10 +94,15 @@ public class Client {
             }
             this.chatManager = ChatManager.getInstanceFor(connection);
             initMessageListener();
-
-
         }
     }
+
+    /**
+     * To create inicital connection that will allow to do queries with server and other clients thorugh server.
+     * @param domain Server domain
+     * @param ip Server IP
+     * @return Connection that will use all along the objects life.
+     */
     private AbstractXMPPConnection createConnection(String domain, String ip) {
         System.out.println("Comienza a crear conexion");
         try {
@@ -105,6 +120,12 @@ public class Client {
             return null;  // or you can throw a RuntimeException to terminate the program
         }
     }
+
+    /**
+     * Resgister using Client credentials.
+     * @param showLogs Local variable to show logs related to either error or success message during register proccess.
+     * @param onSuccessLogin Boolean to indicate if it wants to log in after register,
+     */
     public void registerAccount(boolean showLogs, boolean onSuccessLogin) {
         try {
             AccountManager accountManager = AccountManager.getInstance(connection);
@@ -120,6 +141,11 @@ public class Client {
             if (showLogs) System.err.println("Error registering account: " + e.getMessage());
         }
     }
+
+    /**
+     * Login using the Client credentials user, password.
+     * @param showLogs Boolean to indicate if show logs related to login (either errors or success messages) during log in proccess.
+     */
     public void login(boolean showLogs) {
         try {
             if (!connection.isConnected()) {
@@ -133,6 +159,11 @@ public class Client {
             if (showLogs) System.err.println("Error logging in: " + e.getMessage());
         }
     }
+
+    /**
+     * To get all contacts.
+     * @return String with all contancts of current logged user.
+     */
     public String printRosterEntries() {
         Roster roster = Roster.getInstanceFor(connection);
         StringBuilder strRoaster = new StringBuilder();
@@ -158,6 +189,10 @@ public class Client {
         if (globalShowLogs) System.out.println(strRoaster);
         return strRoaster.toString();
     }
+
+    /**
+     *
+     */
     public void logout() {
         if (connection != null && connection.isConnected()) {
             connection.disconnect();
@@ -165,6 +200,10 @@ public class Client {
             this.isLoggedIn = false;
         }
     }
+
+    /**
+     * Delete account, using current logged user.
+     */
     public void deleteAccount() {
         if (connection == null || !connection.isConnected()) {
             System.err.println("You must be connected to delete your account!");
@@ -179,6 +218,13 @@ public class Client {
             System.err.println("Error deleting account: " + e.getMessage());
         }
     }
+
+    /**
+     *
+     * @param userJID User JID to add to roaster.
+     * @param nickname Nickname to save the new user in roaster.
+     * @param groups Group to add, might be null.
+     */
     public void addContact(String userJID, String nickname, String[] groups) {
         Roster roster = Roster.getInstanceFor(connection);
         if (!roster.isLoaded()) {
@@ -197,6 +243,12 @@ public class Client {
             System.err.println("Error adding contact: " + e.getMessage());
         }
     }
+
+    /**
+     *
+     * @param userJID UserJID to show details.
+     * @return String with all data related with contact.
+     */
     public String showContactDetails(String userJID) {
         Roster roster = Roster.getInstanceFor(connection);
         StringBuilder detailsBuilder = new StringBuilder();
@@ -242,6 +294,11 @@ public class Client {
         if (globalShowLogs) System.out.println(detailsBuilder);
         return detailsBuilder.toString();
     }
+
+    /**
+     * Remove contact
+     * @param userJID user JID to remove
+     */
     public void removeContact(String userJID) {
         Roster roster = Roster.getInstanceFor(connection);
 
@@ -268,6 +325,11 @@ public class Client {
             System.err.println("Error removing contact: " + e.getMessage());
         }
     }
+
+    /***
+     * remove user from roaster and delete subscription.
+     * @param userJID UserJID to remove from roaster, must include dmoain.
+     */
     public void removeContactAndUnsubscribe(String userJID) {
         Roster roster = Roster.getInstanceFor(connection);
 
@@ -299,6 +361,7 @@ public class Client {
             System.err.println("Error removing contact and unsubscribing: " + e.getMessage());
         }
     }
+
     public void sendMessage(String toJID, String messageContent) {
         if (chatManager == null) {
             ChatManager.getInstanceFor(connection);
@@ -380,10 +443,18 @@ public class Client {
         setPassword(password);
     }
 
+    /**
+     * Password setter.
+     * @param password Password related to JID in XMPP server.
+     */
     public void setPassword(String password) {
         this.password = password;
     }
 
+    /**
+     * Username setter.
+     * @param username JID to login or register in XMPP server.
+     */
     public void setUsername(String username) {
         this.username = username;
     }
@@ -395,10 +466,8 @@ public class Client {
 //
 //        HttpFileUploadManager httpFileUploadManager = HttpFileUploadManager.getInstanceFor(connection);
 //        try {
-//            // Solicita un slot para subir el archivo.
 //            Slot slot = httpFileUploadManager.requestSlot(file.getName(), file.length(), "image/png");  // Cambia "image/png" al tipo MIME adecuado si es diferente.
 //
-//            // Listener para el progreso de la carga.
 //            UploadProgressListener uploadProgressListener = new UploadProgressListener() {
 //                @Override
 //                public void onUploadProgress(long uploadedBytes, long totalBytes) {

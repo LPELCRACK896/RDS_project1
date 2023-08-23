@@ -5,10 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="dfe24918-51d4-4c67-8e07-abad42de6951" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/xmpp/client/Client.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/xmpp/client/Client.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/xmpp/client/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/xmpp/client/Main.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -110,7 +108,7 @@
       <workItem from="1692666502941" duration="13968000" />
       <workItem from="1692713280986" duration="1783000" />
       <workItem from="1692723377708" duration="5543000" />
-      <workItem from="1692729044716" duration="14069000" />
+      <workItem from="1692729044716" duration="15174000" />
     </task>
     <servers />
   </component>
@@ -139,72 +137,72 @@
       <breakpoints>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/xmpp/client/Client.java</url>
-          <line>119</line>
+          <line>140</line>
           <option name="timeStamp" value="12" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/xmpp/client/Client.java</url>
-          <line>103</line>
+          <line>118</line>
           <option name="timeStamp" value="13" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/xmpp/client/Client.java</url>
-          <line>178</line>
+          <line>217</line>
           <option name="timeStamp" value="14" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/xmpp/client/Client.java</url>
-          <line>132</line>
+          <line>158</line>
           <option name="timeStamp" value="16" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/xmpp/client/Client.java</url>
-          <line>143</line>
+          <line>174</line>
           <option name="timeStamp" value="20" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/xmpp/client/Client.java</url>
-          <line>187</line>
+          <line>233</line>
           <option name="timeStamp" value="21" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/xmpp/client/Client.java</url>
-          <line>196</line>
+          <line>242</line>
           <option name="timeStamp" value="22" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/xmpp/client/Client.java</url>
-          <line>239</line>
+          <line>291</line>
           <option name="timeStamp" value="24" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/xmpp/client/Client.java</url>
-          <line>251</line>
+          <line>308</line>
           <option name="timeStamp" value="25" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/xmpp/client/Client.java</url>
-          <line>267</line>
+          <line>324</line>
           <option name="timeStamp" value="26" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/xmpp/client/Client.java</url>
-          <line>277</line>
+          <line>334</line>
           <option name="timeStamp" value="27" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/xmpp/client/Client.java</url>
-          <line>298</line>
+          <line>355</line>
           <option name="timeStamp" value="28" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/xmpp/client/Client.java</url>
-          <line>182</line>
+          <line>228</line>
           <option name="timeStamp" value="40" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/xmpp/client/Client.java</url>
-          <line>153</line>
+          <line>184</line>
           <option name="timeStamp" value="42" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
@@ -214,8 +212,17 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/xmpp/client/Client.java</url>
-          <line>68</line>
+          <line>78</line>
           <option name="timeStamp" value="48" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-method">
+          <url>file://$PROJECT_DIR$/src/main/java/xmpp/client/Client.java</url>
+          <line>206</line>
+          <properties class="xmpp.client.Client" method="deleteAccount">
+            <option name="EMULATED" value="true" />
+            <option name="WATCH_EXIT" value="false" />
+          </properties>
+          <option name="timeStamp" value="49" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
