@@ -48,6 +48,11 @@ import org.jivesoftware.smackx.filetransfer.FileTransferManager;
 import org.jivesoftware.smackx.filetransfer.OutgoingFileTransfer;
 import org.jivesoftware.smackx.filetransfer.FileTransfer.Status;
 
+import org.jivesoftware.smackx.httpfileupload.HttpFileUploadManager;
+import org.jivesoftware.smackx.httpfileupload.element.Slot;
+import org.jivesoftware.smackx.httpfileupload.UploadProgressListener;
+
+
 public class Client {
     private String username;
     private String password;
@@ -58,12 +63,8 @@ public class Client {
     private boolean globalShowLogs;
     private boolean isLoggedIn;
     private Map<BareJid, List<String>> chatHistory = new HashMap<>();
-
-
     private ChatManager chatManager;
     private static final Logger LOGGER = Logger.getLogger(ChatManager.class.getName());
-
-
     public Client(String username, String password, boolean isNew, String domain, String ip, boolean globalShowLogs) {
         this.globalShowLogs = globalShowLogs;
         this.username = username;
@@ -78,7 +79,7 @@ public class Client {
         if (connection != null) {
             if (isNew) {
                 registerAccount(true, true);
-            }else {
+            } else {
                 login(true);
             }
             this.chatManager = ChatManager.getInstanceFor(connection);
@@ -87,7 +88,6 @@ public class Client {
 
         }
     }
-
     private AbstractXMPPConnection createConnection(String domain, String ip) {
         System.out.println("Comienza a crear conexion");
         try {
@@ -105,8 +105,7 @@ public class Client {
             return null;  // or you can throw a RuntimeException to terminate the program
         }
     }
-
-    private void registerAccount(boolean showLogs, boolean onSuccessLogin) {
+    public void registerAccount(boolean showLogs, boolean onSuccessLogin) {
         try {
             AccountManager accountManager = AccountManager.getInstance(connection);
             if (!connection.isConnected()) {
@@ -121,7 +120,6 @@ public class Client {
             if (showLogs) System.err.println("Error registering account: " + e.getMessage());
         }
     }
-
     public void login(boolean showLogs) {
         try {
             if (!connection.isConnected()) {
@@ -135,7 +133,6 @@ public class Client {
             if (showLogs) System.err.println("Error logging in: " + e.getMessage());
         }
     }
-
     public String printRosterEntries() {
         Roster roster = Roster.getInstanceFor(connection);
         StringBuilder strRoaster = new StringBuilder();
@@ -151,17 +148,16 @@ public class Client {
         // Print all entries in the roster
         strRoaster.append("=====Roaster=====\n");
         for (RosterEntry entry : roster.getEntries()) {
-            strRoaster.append("User JID: ").append(entry.getJid()).append("\n");
+            strRoaster.append("User JID: ").append(entry.getJid()).append("\n").append("Name: ").append(entry.getName()).append("\n");
             Presence presence = roster.getPresence(entry.getJid());
             if (presence != null) {
-                strRoaster.append("Estado: ").append(presence.getType()).append("\n").append("Modo: ").append(presence.getMode()).append("\n");
+                strRoaster.append("Tipo de presencia: ").append(presence.getType()).append("\n").append("Modo: ").append(presence.getMode()).append("\n").append("Estado: ").append(presence.getStatus()).append("\n");
             }
             strRoaster.append("Subcripción confirmada: ").append(!entry.isSubscriptionPending()).append("\n").append("\n-------------\n");
         }
         if (globalShowLogs) System.out.println(strRoaster);
         return strRoaster.toString();
     }
-
     public void logout() {
         if (connection != null && connection.isConnected()) {
             connection.disconnect();
@@ -169,7 +165,6 @@ public class Client {
             this.isLoggedIn = false;
         }
     }
-
     public void deleteAccount() {
         if (connection == null || !connection.isConnected()) {
             System.err.println("You must be connected to delete your account!");
@@ -180,11 +175,10 @@ public class Client {
             AccountManager accountManager = AccountManager.getInstance(connection);
             accountManager.deleteAccount();
             System.out.println("Account deleted successfully!");
-        } catch (XMPPException | SmackException |InterruptedException e) {
+        } catch (XMPPException | SmackException | InterruptedException e) {
             System.err.println("Error deleting account: " + e.getMessage());
         }
     }
-
     public void addContact(String userJID, String nickname, String[] groups) {
         Roster roster = Roster.getInstanceFor(connection);
         if (!roster.isLoaded()) {
@@ -203,7 +197,6 @@ public class Client {
             System.err.println("Error adding contact: " + e.getMessage());
         }
     }
-
     public String showContactDetails(String userJID) {
         Roster roster = Roster.getInstanceFor(connection);
         StringBuilder detailsBuilder = new StringBuilder();
@@ -231,6 +224,7 @@ public class Client {
                 if (presence != null) {
                     detailsBuilder.append("Estado: ").append(presence.getType()).append("\n");
                     detailsBuilder.append("Modo: ").append(presence.getMode()).append("\n");
+
                 }
 
                 detailsBuilder.append("Subscription Status: ").append(entry.getType()).append("\n");
@@ -248,7 +242,6 @@ public class Client {
         if (globalShowLogs) System.out.println(detailsBuilder);
         return detailsBuilder.toString();
     }
-
     public void removeContact(String userJID) {
         Roster roster = Roster.getInstanceFor(connection);
 
@@ -275,7 +268,6 @@ public class Client {
             System.err.println("Error removing contact: " + e.getMessage());
         }
     }
-
     public void removeContactAndUnsubscribe(String userJID) {
         Roster roster = Roster.getInstanceFor(connection);
 
@@ -307,13 +299,6 @@ public class Client {
             System.err.println("Error removing contact and unsubscribing: " + e.getMessage());
         }
     }
-
-
-    //public void loadChatHistory(BareJid contactJid) {
-      //  List<String> messages = fetchHistoryFromServer(contactJid);
-        //chatHistory.put(contactJid, messages);
-    //}
-
     public void sendMessage(String toJID, String messageContent) {
         if (chatManager == null) {
             ChatManager.getInstanceFor(connection);
@@ -325,43 +310,12 @@ public class Client {
             System.err.println("Error sending message: " + e.getMessage());
         }
     }
-
     public void initMessageListener() {
         chatManager.addIncomingListener((from, message, chat) -> {
             System.out.println("holla");
             System.out.println("Received message from " + from + ": " + message.getBody());
         });
-        System.out.println("aa");
     }
-
-    public List<Feature> getSupportedFeatures() {
-        try {
-            // Asume que 'connection' es tu conexión XMPP activa.
-            Jid serverJid = connection.getXMPPServiceDomain(); // Obtener JID del servidor.
-
-            ServiceDiscoveryManager discoManager = ServiceDiscoveryManager.getInstanceFor(connection);
-            DiscoverInfo discoverInfo = discoManager.discoverInfo(serverJid);
-
-            return discoverInfo.getFeatures();
-        } catch (Exception e) {
-            System.err.println("Error al obtener características del servidor: " + e.getMessage());
-            return null;
-        }
-    }
-
-    public void setCredentials(String username, String password){
-        setUsername(username);
-        setPassword(password);
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
     public void joinGroup(String roomJID, String nickname, String password) {
         try {
             MultiUserChatManager mucManager = MultiUserChatManager.getInstanceFor(connection);
@@ -379,7 +333,6 @@ public class Client {
             System.err.println("Error joining group: " + e.getMessage());
         }
     }
-
     public void sendMessageToGroup(String roomName, String messageContent) {
         if (connection == null || !connection.isConnected()) {
             System.err.println("Debes estar conectado para enviar un mensaje a un grupo.");
@@ -393,7 +346,6 @@ public class Client {
             System.err.println("Error al enviar mensaje al grupo: " + e.getMessage());
         }
     }
-
     public List<List<String>> listAvailableGroups() {
         List<List<String>> roomList = new ArrayList<>();
 
@@ -407,7 +359,7 @@ public class Client {
                 // Obtiene las salas alojadas en el dominio específico
                 Map<EntityBareJid, HostedRoom> rooms = mucManager.getRoomsHostedBy(domain);
 
-                for (Map.Entry<EntityBareJid,HostedRoom> entry : rooms.entrySet()) {
+                for (Map.Entry<EntityBareJid, HostedRoom> entry : rooms.entrySet()) {
                     HostedRoom hostedRoom = entry.getValue();
                     List<String> room = new ArrayList<String>();
                     room.add(hostedRoom.getJid().toString());
@@ -422,59 +374,47 @@ public class Client {
 
         return roomList;
     }
-    public void sendFileBase64(String toJID) {
-        JFileChooser fileChooser = new JFileChooser();
-        int returnValue = fileChooser.showOpenDialog(null);
-        if (returnValue == JFileChooser.APPROVE_OPTION) {
-            try {
-                byte[] fileContent = Files.readAllBytes(fileChooser.getSelectedFile().toPath());
-                String encodedString = Base64.getEncoder().encodeToString(fileContent);
-                String fileMessage = "file://" + encodedString;
-                sendMessage(toJID, fileMessage);
-            } catch (Exception e) {
-                System.err.println("Error al codificar y enviar el archivo: " + e.getMessage());
-            }
-        }
-    }
-    public void sendFile(String toJID) {
-        if (connection == null || !connection.isConnected()) {
-            System.err.println("Debes estar conectado para enviar un archivo.");
-            return;
-        }
 
-        JFileChooser fileChooser = new JFileChooser();
-        int returnValue = fileChooser.showOpenDialog(null);
-        if (returnValue != JFileChooser.APPROVE_OPTION) {
-            return; // el usuario canceló la selección de archivo
-        }
-
-        FileTransferManager ftManager = FileTransferManager.getInstanceFor(connection);
-        try {
-            EntityFullJid receiverJID = JidCreate.entityFullFrom(toJID);
-            OutgoingFileTransfer transfer = ftManager.createOutgoingFileTransfer(receiverJID);
-
-            File file = fileChooser.getSelectedFile();
-            transfer.sendFile(file, "Sending a file");
-
-            // Espera a que el archivo se envíe o hasta que ocurra un error
-            while (!transfer.isDone()) {
-                if (transfer.getStatus() == Status.error) {
-                    System.err.println("ERROR: " + transfer.getError());
-                } else if (transfer.getStatus() == Status.cancelled || transfer.getStatus() == Status.refused) {
-                    System.err.println("CANCELLED: " + transfer.getError());
-                }
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-            System.out.println("File sent successfully.");
-        } catch (Exception e) {
-            System.err.println("Error al enviar archivo: " + e.getMessage());
-        }
+    public void setCredentials(String username, String password) {
+        setUsername(username);
+        setPassword(password);
     }
 
+    public void setPassword(String password) {
+        this.password = password;
+    }
 
+    public void setUsername(String username) {
+        this.username = username;
+    }
+//    public String uploadFile(File file) {
+//        if (connection == null || !connection.isConnected()) {
+//            System.err.println("Debes estar conectado para subir un archivo.");
+//            return null;
+//        }
+//
+//        HttpFileUploadManager httpFileUploadManager = HttpFileUploadManager.getInstanceFor(connection);
+//        try {
+//            // Solicita un slot para subir el archivo.
+//            Slot slot = httpFileUploadManager.requestSlot(file.getName(), file.length(), "image/png");  // Cambia "image/png" al tipo MIME adecuado si es diferente.
+//
+//            // Listener para el progreso de la carga.
+//            UploadProgressListener uploadProgressListener = new UploadProgressListener() {
+//                @Override
+//                public void onUploadProgress(long uploadedBytes, long totalBytes) {
+//                    System.out.printf("Uploaded: %d of %d bytes\n", uploadedBytes, totalBytes);
+//                }
+//            };
+//
+//            // Sube el archivo al servidor.
+//            httpFileUploadManager.uploadFile(file, slot, uploadProgressListener);
+//
+//            // Retorna la URL de descarga del archivo.
+//            return slot.getGetUrl().toString();
+//        } catch (Exception e) {
+//            System.err.println("Error al subir el archivo: " + e.getMessage());
+//            return null;
+//        }
 
+//    }
 }
